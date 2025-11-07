@@ -22,7 +22,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -143,13 +142,13 @@ public class OrdersClientPactTest {
             .uponReceiving("create order 201")
             .path("/orders").method("POST")
             .headers(Map.of("Content-Type","application/json"))
-            .body(Objects.requireNonNull(Objects.requireNonNull(new PactDslJsonBody()
+            .body(new PactDslJsonBody()
                     .stringType("customerName", "Bob")
                     .eachLike("items", 1)
                     .stringType("sku", "SKU1")
                     .integerType("qty", 2)
                     .decimalType("unitPrice", 50.0)
-                    .closeObject()).closeArray()))
+                    .closeObject().closeArray())
             .willRespondWith()
             .status(201)
             .headers(Map.of("Content-Type", "application/json", "Location", "/orders/2"))
