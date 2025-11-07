@@ -1,0 +1,229 @@
+openapi: 3.0.3
+info:
+  title: Orders API
+  version: 1.0.0
+servers:
+  - url: http://localhost:4010
+paths:
+  /orders:
+    get:
+      summary: List orders
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [NEW, PROCESSING, COMPLETED, CANCELLED]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+              examples:
+                sample:
+                  value:
+                    - { "id": 1, "customerName": "Alice", "status": "NEW", "totalAmount": 120.50 }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      summary: Create order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreate'
+            examples:
+              valid:
+                value: { "customerName": "Bob", "items": [{"sku":"SKU1","qty":2,"unitPrice":50.0}] }
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+              examples:
+                created:
+                  value: { "id": 2, "customerName": "Bob", "status": "NEW", "totalAmount": 100.0 }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  /orders/{id}:
+    get:
+      summary: Get order by id
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+              examples:
+                ok:
+                  value: { "id": 1, "customerName": "Alice", "status": "PROCESSING", "totalAmount": 120.5 }
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      summary: Replace order
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderUpdate'
+            examples:
+              replace:
+                value: { "customerName": "Alice W.", "status":"PROCESSING" }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    patch:
+      summary: Patch order
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customerName: { type: string }
+                status: { type: string, enum: [NEW, PROCESSING, COMPLETED, CANCELLED] }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      summary: Delete order
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+      responses:
+        '204':
+          description: No Content
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/ServerError'
+components:
+  parameters:
+    OrderId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: integer
+        format: int64
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          examples:
+            bad:
+              value: { "code":"BAD_REQUEST", "message":"Invalid input" }
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          examples:
+            nf:
+              value: { "code":"NOT_FOUND", "message":"Order not found" }
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          examples:
+            conf:
+              value: { "code":"CONFLICT", "message":"Version conflict" }
+    ServerError:
+      description: Server error
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+          examples:
+            se:
+              value: { "code":"SERVER_ERROR", "message":"Unexpected error" }
+  schemas:
+    Item:
+      type: object
+      required: [sku, qty, unitPrice]
+      properties:
+        sku: { type: string }
+        qty: { type: integer, minimum: 1 }
+        unitPrice: { type: number, format: double, minimum: 0 }
+    OrderCreate:
+      type: object
+      required: [customerName, items]
+      properties:
+        customerName: { type: string }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Item' }
+    OrderUpdate:
+      type: object
+      properties:
+        customerName: { type: string }
+        status: { type: string, enum: [NEW, PROCESSING, COMPLETED, CANCELLED] }
+    Order:
+      type: object
+      required: [id, customerName, status, totalAmount]
+      properties:
+        id: { type: integer, format: int64 }
+        customerName: { type: string }
+        status: { type: string, enum: [NEW, PROCESSING, COMPLETED, CANCELLED] }
+        totalAmount: { type: number, format: double }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string }
+        message: { type: string }

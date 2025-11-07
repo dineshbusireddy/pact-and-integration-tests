@@ -1,0 +1,10 @@
+{
+  "name": "prism-pact-spring",
+  "private": true,
+  "scripts": {
+    "mock": "prism mock openapi/orders.yaml -p 4010 --errors --cors --dynamic"
+  },
+  "devDependencies": {
+    "@stoplight/prism-cli": "^5.8.0"
+  }
+}
