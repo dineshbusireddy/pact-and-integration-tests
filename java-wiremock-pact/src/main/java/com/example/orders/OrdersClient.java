@@ -14,13 +14,9 @@ public class OrdersClient {
 
   private final WebClient webClient;
 
-  public OrdersClient(String baseUrl) {
-    this.webClient = WebClient.builder().baseUrl(baseUrl).build();
-  }
-
-  // Package-private constructor for testing
-  OrdersClient(WebClient webClient) {
-    this.webClient = webClient;
+  public OrdersClient(WebClient.Builder builder) {
+    String baseUrl = System.getProperty("orders.baseUrl", "http://localhost:4010");
+    this.webClient = builder.baseUrl(baseUrl).build();
   }
 
   public Mono<List<Map>> listOrders(String status) {
